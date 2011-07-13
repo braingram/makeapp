@@ -3,7 +3,7 @@
 A uber-simple python script to app converter
 """
 
-import logging, os, shutil, sys
+import logging, os, shutil, stat, sys
 # logging.basicConfig(level=logging.DEBUG)
 from optparse import OptionParser
 
@@ -67,6 +67,11 @@ os.makedirs(resourceDir)
 
 logging.debug("moving main")
 shutil.copy2(main, exeDir)
+dstMain = exeDir + '/' + os.path.basename(main)
+
+logging.debug("making main executable")
+if os.system('chmod u+x %s' % dstMain): error("failed to set permissions on app", IOError)
+
 logging.debug("moving resources")
 for r in resources:
     logging.debug("moving resouce: %s" % r)
