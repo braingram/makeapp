@@ -34,7 +34,7 @@ parser.add_option("-r", "--resource", action="append", dest="resources",
 parser.add_option("-l", "--launcher", dest="launcher",
                     action="store_true", default=False,
                     help="construct and use a launcher shell script")
-parser.add_option("-s", "--script", dest="script", default="",
+parser.add_option("-s", "--script", dest="script",
                     help="script to run as part of launcher")
 
 (options, args) = parser.parse_args()
@@ -94,16 +94,19 @@ os.makedirs(resourceDir)
 exeName = os.path.basename(main)
 
 # construct launcher
-if options.launcher:
+if options.launcher or (not (options.script is None)):
     logging.debug("Making launcher")
     launcher = launcherHead
-    if os.path.exists(options.script):
-        logging.debug("Found launcher file: %s" % options.script)
-        scriptFile = open(options.script, 'r')
-        script = read()
-        scriptFile.close()
+    if options.script is None:
+        script = ""
     else:
-        script = options.script
+        if os.path.exists(options.script):
+            logging.debug("Found launcher file: %s" % options.script)
+            scriptFile = open(options.script, 'r')
+            script = scriptFile.read()
+            scriptFile.close()
+        else:
+            script = options.script
     launcher += script
     launcher += launcherTail % os.path.basename(main)
     
