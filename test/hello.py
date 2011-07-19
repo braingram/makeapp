@@ -8,7 +8,7 @@ from PySide.QtGui import *
 exeDir = os.path.abspath(os.path.dirname(sys.argv[0]))
 resDir = os.path.abspath(exeDir+'/../Resources')
 
-msgFile = open(resDir+'/hello.txt','r')
+msgFile = open(exeDir+'/hello.txt','r')
 msg = msgFile.readline()
 msgFile.close()
 
