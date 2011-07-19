@@ -3,10 +3,8 @@ What is this?
 =====
 This is a simple script to convert scripts (built for python may work with others) into app bundles to easily run on Mac OS X.
 
-=====
 Usage
-=====
-
+------
 
 Basic command syntax::
     makeapp.py main supporting_module(s) -r resource1 -r resource2... [options]
