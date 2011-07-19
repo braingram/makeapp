@@ -7,6 +7,15 @@ import logging, os, shutil, stat, sys
 # logging.basicConfig(level=logging.DEBUG)
 from optparse import OptionParser
 
+
+launcherHead="""#!/bin/sh
+DIR="$( cd "$( dirname "$0" )" && pwd )"
+cd $DIR
+"""
+launcherTail="""
+exec ./%s
+"""
+
 def error(string, exception=Exception):
     logging.error(string)
     raise exception, string
@@ -22,6 +31,11 @@ parser.add_option("-d", "--dir", dest="dir",
                     help="destination directory for .app")
 parser.add_option("-r", "--resource", action="append", dest="resources",
                     help="resource files", default=[])
+parser.add_option("-l", "--launcher", dest="launcher",
+                    action="store_true", default=False,
+                    help="construct and use a launcher shell script")
+parser.add_option("-s", "--script", dest="script", default="",
+                    help="script to run as part of launcher")
 
 (options, args) = parser.parse_args()
 if len(args) == 0:
@@ -48,6 +62,7 @@ for (i,s) in enumerate(supporting[:]):
     supporting[i] = os.path.abspath(s)
 logging.debug("input supporting: %s" % str(supporting))
 
+
 # construct options from input values
 if options.name is None:
     options.name = os.path.splitext(os.path.basename(main))[0] + '.app'
@@ -64,6 +79,7 @@ logging.debug("output dir: %s" % options.dir)
 appName = options.dir + '/' + options.name
 logging.debug("output name: %s" % appName)
 
+
 # check if current directory exists and delete it
 if os.path.exists(appName):
     logging.debug("output file already exists, deleting")
@@ -75,13 +91,47 @@ exeDir = appName+'/Contents/MacOS/'
 os.makedirs(exeDir)
 resourceDir = appName+'/Contents/Resources/'
 os.makedirs(resourceDir)
+exeName = os.path.basename(main)
 
+# construct launcher
+if options.launcher:
+    logging.debug("Making launcher")
+    launcher = launcherHead
+    if os.path.exists(options.script):
+        logging.debug("Found launcher file: %s" % options.script)
+        scriptFile = open(options.script, 'r')
+        script = read()
+        scriptFile.close()
+    else:
+        script = options.script
+    launcher += script
+    launcher += launcherTail % os.path.basename(main)
+    
+    # write launcher to file
+    exeName = 'launch.sh'
+    launcherFilename = exeDir + '/' + exeName
+    logging.debug("Writing launcher file: %s" % launcherFilename)
+    launcherFile = open(launcherFilename, 'w')
+    launcherFile.write(launcher)
+    launcherFile.close()
+    
+    # make launcher executable
+    logging.debug("making launcher executable")
+    if os.system('chmod u+x %s' % launcherFilename): error("failed to set main %s as executable" % launcherFilename, IOError)
+
+# move files
 logging.debug("moving main")
 shutil.copy2(main, exeDir)
-dstMain = exeDir + '/' + os.path.basename(main)
-
 logging.debug("making main executable")
-if os.system('chmod u+x %s' % dstMain): error("failed to set permissions on app", IOError)
+
+# make main executable
+dstMain = exeDir + '/' + os.path.basename(main)
+if os.system('chmod u+x %s' % dstMain): error("failed to set main %s as executable" % dstMain, IOError)
+
+# # main main/launcher executable
+# dstExe = exeDir + '/' + exeName
+# logging.debug("making main/launcher executable")
+# if os.system('chmod u+x %s' % dstExe): error("failed to set permissions on app", IOError)
 
 logging.debug("moving supporting files")
 for s in supporting:
@@ -101,7 +151,7 @@ if not options.icon is None:
     shutil.copy2(icon, resourceDir)
     plist += 'CFBundleIconFile = "%s";\n' % os.path.basename(icon)
 
-plist += 'CFBundleExecutable = "%s";\n' % os.path.basename(main)
+plist += 'CFBundleExecutable = "%s";\n' % os.path.basename(exeName)
 plist += '}\n'
 
 logging.debug("writing plist")
