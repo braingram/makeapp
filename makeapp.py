@@ -123,7 +123,7 @@ if options.launcher or (not (options.script is None)):
     if os.system('chmod u+x %s' % launcherFilename): error("failed to set main %s as executable" % launcherFilename, IOError)
 
 # move files
-logging.debug("moving main")
+logging.debug("copying main")
 shutil.copy2(main, exeDir)
 logging.debug("making main executable")
 
@@ -136,15 +136,21 @@ if os.system('chmod u+x %s' % dstMain): error("failed to set main %s as executab
 # logging.debug("making main/launcher executable")
 # if os.system('chmod u+x %s' % dstExe): error("failed to set permissions on app", IOError)
 
-logging.debug("moving supporting files")
+logging.debug("copying supporting files")
 for s in supporting:
-    logging.debug("moving supporting: %s" % s)
-    shutil.copy2(s, exeDir)
+    logging.debug("copying supporting: %s" % s)
+    if os.path.isdir(s):
+        shutil.copytree(s, exeDir+'/'+os.path.basename(os.path.abspath(s)))
+    else:
+        shutil.copy2(s, exeDir)
 
-logging.debug("moving resources")
+logging.debug("copying resources")
 for r in resources:
-    logging.debug("moving resouce: %s" % r)
-    shutil.copy2(r, resourceDir)
+    logging.debug("copying resouce: %s" % r)
+    if os.path.isdir(r):
+        shutil.copytree(s, exeDir+'/'+os.path.basename(os.path.abspath(s)))
+    else:
+        shutil.copy2(r, resourceDir)
 
 logging.debug("making plist")
 plist = '{\n'
